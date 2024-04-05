@@ -1,3 +1,4 @@
+https://www.apollographql.com/docs/apollo-server
 1. npm i @apollo/server graphql
 
 resolvers/index.js
@@ -55,167 +56,6 @@ query {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-data/schema.js
-
-const schema = buildSchema(`
-    type Product {
-        id: ID
-        sku: String,
-        name: String,
-        price: Float,
-        discountPercentage: Float,
-    }
-    type Query {
-        product: Product
-    }
-`)
-
-
-
-index.js
-
-const root = { product: () => {
-    return {
-        id: 1,
-        sku: 'Product1',
-        name: 'Product1',
-        price: 100,
-        discountPercentage: 10,
-    }
-}};
-
-app.use('/graphql', graphqlHTTP({
-  schema: schema,
-  rootValue: root,
-  graphiql: true,
-}));
-
-http://localhost:8000/graphql
-
-query {
-  product {
-    id
-    name
-    price
-  }
-}
-
-
-
-data/resolvers.js
-
-
-class Product {
-    constructor(id, { name, sku, price, discount}) {
-        this.id = id;
-        this.name = name;
-        this.sku = sku;
-        this.price = price;
-        this.discount = discount;
-     }
-}
-
-const productDatabase = {};
-
-const resolvers = {
-    getProduct: ({ id }) => {
-        return new Product(id, productDatabase[id]);
-    },
-    createProduct: ({ input }) => {
-        let id = require('crypto').randomBytes(10).toString('hex');
-        productDatabase[id] = input;
-        return new Product(id, input);
-    }
-}
-
-export default resolvers;
-
-
-data/schema.js
-
-
-import { buildSchema } from "graphql";
-
-const schema = buildSchema(`
-    type Product {
-        id: ID
-        sku: String,
-        name: String,
-        price: Float,
-        discountPercentage: Float,
-    }
-
-    type Query {
-        getProduct(id: ID): Product
-    }
-
-    input StoreInput {
-        store: String
-    }
-
-    input ProductInput {
-        id: ID
-        sku: String,
-        name: String,
-        price: Float,
-        discountPercentage: Float,
-    }
-
-    type Mutation {
-        createProduct(input: ProductInput): Product
-    }
-`);
-
-export default schema;
-
-
-
-index.js
-
-
-app.use('/graphql', graphqlHTTP({
-    schema: schema,
-    rootValue: resolvers,
-    graphiql: true,
-}));
-
-
-http://localhost:8000/graphql
-
-mutation {
-  createProduct(input: {
-        sku: "sku1",
-        name: "product1",
-        price: 100,
-        discountPercentage: 20,
-  }) {
-    id,
-    name
-  }
-}
-
-
-query {
-  getProduct (id: "18d1a8f574883de410b2") {
-    id
-    name
-    price
-  }
-}
-
-
 2. Get users
 resolvers/index.js
 
@@ -248,7 +88,6 @@ const schemas = buildSchema(`
         role: String!
         status: String!
         email: String!
-        password: String!
     }
 
     type Query {
@@ -276,22 +115,52 @@ query {
   }
 }
 
-3. Register
+frontend
+
+query user($userId: ID) {
+  user(id: $userId) {
+    email
+  }
+}
+
+{
+  "userId": "660f9bafb11e2b0393819221"
+}
+
+
+3. get user
+
+resolvers Query
+
+    user: async (_, {id}) => {
+         try{
+            return await UserModel.findOne({_id: id});
+         } catch(e) {
+            throw e;
+         }
+      },
+
+ schemas Query
+
+ user(id: ID): User
+
+
+4. Register
 
 resolvers
 
     Mutation : {
-      regUser: async (arg1, args) => {
+      regUser: async (_, {input}) => {
           try {
-              const user = await UserModel.findOne({email: args.email});
+              const user = await UserModel.findOne({email: input.email});
               if (user) throw new Error('User already exists');
               const newUser = await UserModel.create({
-                  firstName: args.firstName,
-                  lastName: args.lastName,
-                  email: args.email,
+                  firstName: input.firstName,
+                  lastName: input.lastName,
+                  email: input.email,
                   role: 'user',
                   status: "active",
-                  password: args.password
+                  password: input.password
               })
 
               newUser.id = newUser._id;
@@ -300,32 +169,108 @@ resolvers
               throw error;
           }
       },
-    }
-
+   }
 
 schema
 
-type Mutation {
-        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
-    }
+ input UserInput {
+      id: ID
+      firstName: String
+      lastName: String
+      role: String
+      status: String
+      email: String!
+      password: String!
+  }
 
 
+ type Mutation {
+    regUser(input: UserInput!): User!
+ }
 
  Frontend Query
 
-mutation RegisterUser($email: String!, $password: String!, $firstName: String, $lastName: String) {
-  regUser(email: $email, password: $password, firstName: $firstName, lastName: $lastName) {
+mutation RegUser($input: UserInput!) {
+  regUser(input: $input) {
     id
-    email
     firstName
     lastName
     role
     status
+    email
+  }
+}
+
+{
+  "input": {
+    "email": "gevorg@gmail.com",
+    "password": "Ga123456"
   }
 }
 
 
+4. Login, Edit, Delete
+
+resolvers
+
+import jwt from 'jsonwebtoken'
+import config from "../config";
+
+    loginUser: async (_, { email, password }) => {
+         const user = await UserModel.findOne({ email });
+         if (!user) throw new Error('User not found');
+         const isValid = await user.comparePassword(password);
+         if (!isValid) throw new Error('Invalid password');
+         const token = jwt.sign({ userId: user.id, role: user.role }, config.JWTSecret, { expiresIn: '1d' });
+         return { token, user };
+      },
+
+      editUser: async (_, args, context) => {
+         if (!context.user || context.user.userId !== args.id) throw new Error('Not authorized or invalid user');
+         const updatedUser = await UserModel.findByIdAndUpdate(args.id, args, { new: true });
+         return updatedUser;
+      },
+
+      deleteUser: async (_, { id }, context) => {
+         if (!context.user || context.user.role !== 'ADMIN') throw new Error('Not authorized or not an admin');
+         await UserModel.findByIdAndDelete(id);
+         return 'User successfully deleted';
+      },
+
+
+schemas
+
+    type Mutation {
+        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
+        loginUser(email: String!, password: String!): AuthPayload!
+        editUser(id: String!, firstName: String, lastName: String, email: String): User
+        deleteUser(id: String!): String
+    }
+
+    type AuthPayload {
+        token: String!
+        user: User!
+    }
+
+
+
+    query
+
+
+   type Mutation {
+        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
+        loginUser(email: String!, password: String!): AuthPayload!
+        editUser(id: String!, firstName: String, lastName: String, email: String): User
+        deleteUser(id: String!): String
+    }
+
+    type AuthPayload {
+        token: String!
+        user: User!
+    }
+
 {
   "email": "g@gmail.com",
-  "password": "Ga123456"
+  "password": "Ga123456",
+
 }

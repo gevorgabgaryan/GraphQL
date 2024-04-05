@@ -8,7 +8,7 @@ const config = {
     url: process.env.MONGO_DB_URL,
     dbName: process.env.MONGO_DB_NAME
   },
-  JWTSecret: process.env.JWT_SECRET,
+  JWTSecret: process.env.JWT_SECRET || 'secret',
   userRoles: ['user', 'admin', 'editor'],
   userStatuses: ['new', 'active', 'inactive'],
   admin: {

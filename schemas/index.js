@@ -5,19 +5,43 @@ const schemas = buildSchema(`
         id: String!
         firstName: String
         lastName: String
-        role: String!
-        status: String!
+        role: String
+        status: String
+        email: String!
+    }
+
+    type Query {
+        users: [User],
+        user(id: ID): User
+    }
+
+    input UserInput {
+      id: ID
+      firstName: String
+      lastName: String
+      role: String
+      status: String
+      email: String!
+      password: String!
+    }
+
+    input LoginInput {
         email: String!
         password: String!
     }
 
-    type Query {
-        users: [User]
+    type Mutation {
+        regUser(input: UserInput!): User!
+        loginUser(input: LoginInput!): AuthPayload!
+        editUser(input: UserInput!): User
+        deleteUser(id: ID!): String
     }
 
-    type Mutation {
-        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
+    type AuthPayload {
+        token: String!
+        user: User!
     }
+
 `)
 
 export default schemas;
