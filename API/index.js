@@ -3,8 +3,12 @@ import cors from 'cors';
 import http from 'http';
 import config from '../config';
 import {checkAuthorization} from '../middlewares/checkAuthorization';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@apollo/server/express4';
+import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer'
+import schemas from '../schemas';
+import resolvers from '../resolvers';
 
-const port = config.port
 
 class API {
    static async init() {
@@ -13,6 +17,18 @@ class API {
    app.use(cors())
    app.use(checkAuthorization)
    const httpServer = http.createServer(app);
+
+   const server = new ApolloServer({
+    typeDefs: schemas,
+    resolvers,
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  });
+  await server.start();
+
+  app.use(
+    expressMiddleware(server),
+  );
+
    httpServer.listen({ port: config.port}, () => {
       console.log(`Server ready at http://localhost:${config.port}`);
     });

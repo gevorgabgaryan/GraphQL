@@ -9,6 +9,7 @@ import AdminInit from './helper/InitAdmin'
         await API.init();
         await AdminInit.init()
     } catch(e) {
+        console.log(e)
         logger.error(e)
     }
 })()
