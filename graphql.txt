@@ -274,7 +274,7 @@ schemas Mutation
     })
    );
 
-   frontend
+frontend
 
 mutation EditUser($input: EditUserInput!) {
   editUser(input: $input) {
@@ -292,3 +292,35 @@ mutation EditUser($input: EditUserInput!) {
      "lastName": "GGG"
    }
 }
+
+HEADER
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjBmZjM3ZGMyMGNmZGE2YmI4ZjBmOGMiLCJyb2xlIjoidXNlciIsImlhdCI6MTcxMjMyMzM1MywiZXhwIjoxNzEyNDA5NzUzfQ.HlgnGy6kVIoukGKYvGvmCCUs2mcJYkBtHHftOdQNAyM
+
+7. Delete
+
+resolvers
+
+
+  deleteUser: async (_, { id }, context) => {
+         if (!context.user || context.user.role !== 'admin') throw new Error('Not authorized or not an admin');
+         await UserModel.findByIdAndDelete(id);
+         return 'User successfully deleted';
+      },
+
+schema Mutation
+
+ deleteUser(id: ID!): String
+
+
+frontend
+
+mutation DeleteUser($deleteUserId: ID!) {
+  deleteUser(id: $deleteUserId)
+}
+
+{
+  "deleteUserId": "660ff37dc20cfda6bb8f0f8c"
+}
+
+HEADER ADMIN
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjBmZjM3ZGMyMGNmZGE2YmI4ZjBmOGMiLCJyb2xlIjoidXNlciIsImlhdCI6MTcxMjMyMzM1MywiZXhwIjoxNzEyNDA5NzUzfQ.HlgnGy6kVIoukGKYvGvmCCUs2mcJYkBtHHftOdQNAyM

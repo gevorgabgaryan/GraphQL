@@ -58,7 +58,7 @@ const resolvers = {
       },
 
       deleteUser: async (_, { id }, context) => {
-         if (!context.user || context.user.role !== 'ADMIN') throw new Error('Not authorized or not an admin');
+         if (!context.user || context.user.role !== 'admin') throw new Error('Not authorized or not an admin');
          await UserModel.findByIdAndDelete(id);
          return 'User successfully deleted';
       },
