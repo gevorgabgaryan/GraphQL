@@ -25,22 +25,24 @@ const schemas = buildSchema(`
       password: String!
     }
 
-    input LoginInput {
-        email: String!
-        password: String!
-    }
-
-    type Mutation {
-        regUser(input: UserInput!): User!
-        loginUser(input: LoginInput!): AuthPayload!
-        editUser(input: UserInput!): User
-        deleteUser(id: ID!): String
+    input EditUserInput {
+        firstName: String
+        lastName: String
+        password: String
     }
 
     type AuthPayload {
         token: String!
         user: User!
     }
+
+    type Mutation {
+        regUser(input: UserInput!): User!
+        loginUser(email: String!, password: String!): AuthPayload!
+        editUser(input: EditUserInput!): User
+        deleteUser(id: ID!): String
+    }
+
 
 `)
 

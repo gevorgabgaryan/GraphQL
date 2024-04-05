@@ -52,8 +52,8 @@ const resolvers = {
       },
 
       editUser: async (_, args, context) => {
-         if (!context.user || context.user.userId !== args.id) throw new Error('Not authorized or invalid user');
-         const updatedUser = await UserModel.findByIdAndUpdate(args.id, args, { new: true });
+         if (!context.user || !context.user.userId) throw new Error('UnAuthorized');
+         const updatedUser = await UserModel.findByIdAndUpdate(context.user.userId, args.input, { new: true });
          return updatedUser;
       },
 

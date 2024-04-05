@@ -26,8 +26,12 @@ class API {
   await server.start();
 
   app.use(
-    expressMiddleware(server),
-  );
+    expressMiddleware(server, {
+      context: async ({ req }) => ({
+          user: req.user,
+      }),
+    })
+   );
 
    httpServer.listen({ port: config.port}, () => {
       console.log(`Server ready at http://localhost:${config.port}`);

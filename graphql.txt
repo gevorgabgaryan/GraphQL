@@ -97,14 +97,7 @@ const schemas = buildSchema(`
 
 export default schemas;
 
-
-query {
-  users {
-    id
-    firstName
-  }
-}
-
+frontend
 
 http://localhost:8000/graphql
 
@@ -114,19 +107,6 @@ query {
     firstName
   }
 }
-
-frontend
-
-query user($userId: ID) {
-  user(id: $userId) {
-    email
-  }
-}
-
-{
-  "userId": "660f9bafb11e2b0393819221"
-}
-
 
 3. get user
 
@@ -144,6 +124,17 @@ resolvers Query
 
  user(id: ID): User
 
+frontend
+
+query user($userId: ID) {
+  user(id: $userId) {
+    email
+  }
+}
+
+{
+  "userId": "660f9bafb11e2b0393819221"
+}
 
 4. Register
 
@@ -209,14 +200,14 @@ mutation RegUser($input: UserInput!) {
 }
 
 
-4. Login, Edit, Delete
+5. Login
 
-resolvers
+resolvers Mutation
 
 import jwt from 'jsonwebtoken'
 import config from "../config";
 
-    loginUser: async (_, { email, password }) => {
+   loginUser: async (_, { email, password }) => {
          const user = await UserModel.findOne({ email });
          if (!user) throw new Error('User not found');
          const isValid = await user.comparePassword(password);
@@ -225,52 +216,79 @@ import config from "../config";
          return { token, user };
       },
 
-      editUser: async (_, args, context) => {
-         if (!context.user || context.user.userId !== args.id) throw new Error('Not authorized or invalid user');
-         const updatedUser = await UserModel.findByIdAndUpdate(args.id, args, { new: true });
-         return updatedUser;
-      },
-
-      deleteUser: async (_, { id }, context) => {
-         if (!context.user || context.user.role !== 'ADMIN') throw new Error('Not authorized or not an admin');
-         await UserModel.findByIdAndDelete(id);
-         return 'User successfully deleted';
-      },
 
 
-schemas
+schemas Mutation
 
-    type Mutation {
-        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
-        loginUser(email: String!, password: String!): AuthPayload!
-        editUser(id: String!, firstName: String, lastName: String, email: String): User
-        deleteUser(id: String!): String
-    }
+    loginUser(email: String!, password: String!): AuthPayload!
 
     type AuthPayload {
         token: String!
         user: User!
     }
 
+    loginUser(email: String!, password: String!): AuthPayload!
 
+ frontend
 
-    query
-
-
-   type Mutation {
-        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
-        loginUser(email: String!, password: String!): AuthPayload!
-        editUser(id: String!, firstName: String, lastName: String, email: String): User
-        deleteUser(id: String!): String
-    }
-
-    type AuthPayload {
-        token: String!
-        user: User!
-    }
+ mutation LoginUser($email: String!, $password: String!) {
+  loginUser(email: $email, password: $password) {
+    token
+  }
+}
 
 {
-  "email": "g@gmail.com",
-  "password": "Ga123456",
+  "email": "gevorg2@gmail.com",
+  "password": "Ga123456"
+}
 
+6. Edit User
+
+   resolvers Mutation
+
+      editUser: async (_, args, context) => {
+         if (!context.user || !context.user.userId) throw new Error('UnAuthorized');
+         const updatedUser = await UserModel.findByIdAndUpdate(context.user.userId, args.input, { new: true });
+         return updatedUser;
+      },
+  schema Mutation
+
+  input EditUserInput {
+        firstName: String
+        lastName: String
+        password: String
+  }
+
+
+  editUser(input: EditUserInput!): User
+
+
+  API.js
+
+
+   app.use(
+    expressMiddleware(server, {
+      context: async ({ req }) => ({
+          user: req.user,
+      }),
+    })
+   );
+
+   frontend
+
+mutation EditUser($input: EditUserInput!) {
+  editUser(input: $input) {
+    id
+    firstName
+    lastName
+    role
+    status
+    email
+  }
+}
+
+{
+   "input": {
+     "lastName": "GGG"
+   }
 }

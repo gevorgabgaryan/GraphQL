@@ -7,12 +7,15 @@ export const checkAuthorization = (req, res, next) => {
       return next();
     }
     try {
-      const decodedToken = jwt.verify(token.split(' ')[1], config.JWTSecret);
+      const tokenArray = token.split(' ');
+      if (tokenArray.length !== 2) {
+        return next();
+      }
+      const decodedToken = jwt.verify(tokenArray[1], config.JWTSecret);
       const { userId, role } = decodedToken;
       req.user = { userId, role };
       next();
     } catch (e) {
-      console.log(e);
-      next(e)
+      next()
     }
 };
