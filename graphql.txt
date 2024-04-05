@@ -1,4 +1,4 @@
-npm i @apollo/server graphql
+1. npm i @apollo/server graphql
 
 resolvers/index.js
 
@@ -47,16 +47,6 @@ app.use(
 );
 
 index.js
-
-import API from "./API"
-
-(async ()=>{
-    try{
-     await API.init();
-    } catch(e) {
-        console.log(e)
-    }
-})()
 
 http://localhost:8000/graphql
 
@@ -223,4 +213,119 @@ query {
     name
     price
   }
+}
+
+
+2. Get users
+resolvers/index.js
+
+import UserModel from "../models/UserModel";
+
+const resolvers = {
+    Query: {
+      users: async () => {
+         try{
+            return await UserModel.find();
+         } catch(e) {
+            throw e;
+         }
+      },
+    },
+  };
+
+export default resolvers;
+
+
+schemas/index.js
+
+import { buildSchema } from "graphql";
+
+const schemas = buildSchema(`
+    type User {
+        id: String!
+        firstName: String!
+        lastName: String!
+        role: String!
+        status: String!
+        email: String!
+        password: String!
+    }
+
+    type Query {
+        users: [User]
+    }
+`)
+
+export default schemas;
+
+
+query {
+  users {
+    id
+    firstName
+  }
+}
+
+
+http://localhost:8000/graphql
+
+query {
+  users {
+    id
+    firstName
+  }
+}
+
+3. Register
+
+resolvers
+
+    Mutation : {
+      regUser: async (arg1, args) => {
+          try {
+              const user = await UserModel.findOne({email: args.email});
+              if (user) throw new Error('User already exists');
+              const newUser = await UserModel.create({
+                  firstName: args.firstName,
+                  lastName: args.lastName,
+                  email: args.email,
+                  role: 'user',
+                  status: "active",
+                  password: args.password
+              })
+
+              newUser.id = newUser._id;
+              return newUser;
+          } catch (error) {
+              throw error;
+          }
+      },
+    }
+
+
+schema
+
+type Mutation {
+        regUser(email: String!, password: String!, firstName: String, lastName: String): User!
+    }
+
+
+
+ Frontend Query
+
+mutation RegisterUser($email: String!, $password: String!, $firstName: String, $lastName: String) {
+  regUser(email: $email, password: $password, firstName: $firstName, lastName: $lastName) {
+    id
+    email
+    firstName
+    lastName
+    role
+    status
+  }
+}
+
+
+{
+  "email": "g@gmail.com",
+  "password": "Ga123456"
 }
